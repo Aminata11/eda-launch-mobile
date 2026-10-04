@@ -581,27 +581,27 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
               const SizedBox(height: 16),
 
               // Bouton analyse IA
-              OutlinedButton.icon(
-                onPressed: _isAnalyzing ? null : _analyzeWithAI,
-                icon: _isAnalyzing
-                    ? const SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.primary,
-                        ),
-                      )
-                    : const Icon(Icons.auto_awesome_rounded),
-                label: Text(
-                  _isAnalyzing
-                      ? 'Analyse en cours...'
-                      : 'Analyser avec l\'IA',
-                ),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 52),
-                ),
-              ),
+             OutlinedButton.icon(
+  onPressed: _isAnalyzing ? null : _analyzeImageWithAI,
+  icon: _isAnalyzing
+      ? const SizedBox(
+          height: 18,
+          width: 18,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: AppColors.primary,
+          ),
+        )
+      : const Icon(Icons.image_search_rounded),
+  label: Text(
+    _isAnalyzing
+        ? 'Analyse en cours...'
+        : 'Analyser l\'image',
+  ),
+  style: OutlinedButton.styleFrom(
+    minimumSize: const Size(double.infinity, 52),
+  ),
+),
 
               const SizedBox(height: 12),
 
@@ -739,4 +739,65 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
       ),
     );
   }
+
+
+  Future<void> _analyzeImageWithAI() async {
+  if (_photos.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Ajoutez une photo pour l\'analyse'),
+        backgroundColor: AppColors.warning,
+      ),
+    );
+    return;
+  }
+
+  setState(() => _isAnalyzing = true);
+
+  try {
+    final storage = const FlutterSecureStorage();
+    final token = await storage.read(key: 'jwt_token');
+
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse(AppUrls.analyzeImage),
+    );
+
+    request.headers['Authorization'] = 'Bearer $token';
+    request.fields['context'] = 'Photo de sol ou plante agricole au Sénégal';
+
+    // Envoie seulement la première photo
+    request.files.add(await http.MultipartFile.fromPath(
+      'image',
+      _photos[0].path,
+    ));
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+    final data = jsonDecode(response.body);
+
+    setState(() => _isAnalyzing = false);
+
+    if (!mounted) return;
+
+    if (data['success'] == true) {
+      setState(() => _aiAnalysis = data['data']);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(data['message'] ?? 'Erreur analyse image'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  } catch (e) {
+    setState(() => _isAnalyzing = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Erreur : $e'),
+        backgroundColor: AppColors.error,
+      ),
+    );
+  }
+}
 }

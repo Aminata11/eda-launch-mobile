@@ -92,6 +92,8 @@ static String generateBusinessPlan(String projectId) =>
 static String getBusinessPlan(String projectId) => 
     '$baseUrl/business-plan/$projectId';
 
+static const String analyzeImage = '$baseUrl/reports/analyze-image';    
+
 // Assignation
 static String assignFinancer(String requestId) => 
     '$baseUrl/financing/$requestId/assign';
