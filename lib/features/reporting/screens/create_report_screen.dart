@@ -775,6 +775,8 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
     final streamedResponse = await request.send();
     final response = await http.Response.fromStream(streamedResponse);
     final data = jsonDecode(response.body);
+    print('📸 Analyze image response: $data'); // ← ici
+print('📸 Status code: ${response.statusCode}'); // ← ici
 
     setState(() => _isAnalyzing = false);
 
